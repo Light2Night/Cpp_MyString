@@ -8,23 +8,21 @@ private:
 	char *str = nullptr;
 	unsigned int size;
 
-	void DeleteStr() {
-		if (str != nullptr)
-			delete[] str;
-	}
-
 	void Initialization(const char symbol) { // Метод ініціалізації символом
-		DeleteStr();
-		if (symbol == '\0')
-			str = new char[1]{ '\0' };
-		else
-			str = new char[2]{ symbol, '\0' };
+		delete[] str;
 
-		size = strlen(str);
+		if (symbol == '\0') {
+			str = new char[1]{ '\0' };
+			size = 0;
+			return;
+		}
+
+		str = new char[2]{ symbol, '\0' };
+		size = 1;
 	}
 
 	void Initialization(const char *text) { // Метод ініціалізації рядком
-		DeleteStr();
+		delete[] str;
 
 		size = strlen(text);
 		str = new char[size + 1];
@@ -45,7 +43,7 @@ private:
 		for (unsigned int i = 0; i < size; i++) {
 			newStr[i] = str[i];
 		}
-		DeleteStr();
+		delete[] str;
 
 		newStr[size++] = symbol;
 		newStr[size] = '\0';
@@ -61,7 +59,7 @@ private:
 		for (unsigned int i = 0; i < size; i++) {
 			newStr[i] = str[i];
 		}
-		DeleteStr();
+		delete[] str;
 
 		for (unsigned int i = size; i < newSize; i++) {
 			newStr[i] = text[i - size];
@@ -73,23 +71,19 @@ private:
 		str = newStr;
 	}
 
-	MyString ConcatinationOfText(const char *text) { // Метод, що вертає об'єкт-результат конкатинації двох об'єктів, або конкатинації об'єкта з рядком
-		int tempSize = size + strlen(text);
-		char *tempStr = new char[tempSize + 1];
-
-		for (unsigned int i = 0; i < size; i++) {
-			tempStr[i] = str[i];
+	int StrCmp(const char *str1, const char *str2) const { // Порівняння двох рядків
+		/* Повертає:
+			0  - якщо рядки ідентичні
+			1  - якщо перший відмінний символ рядка str1 має більший код символу в порівнянні з str2
+			-1 - якщо перший відмінний символ рядка str1 має менший код символу в порівнянні з str2
+		*/
+		for (unsigned int i = 0; str1[i] != '\0' || str2[i] != '\0'; i++) {
+			if (str1[i] > str2[i])
+				return 1;
+			if (str1[i] < str2[i])
+				return -1;
 		}
-
-		for (unsigned int i = size; i < tempSize; i++) {
-			tempStr[i] = text[i - size];
-		}
-		tempStr[tempSize] = '\0';
-
-		MyString tempObject = tempStr;
-		delete[] tempStr;
-
-		return tempObject;
+		return 0;
 	}
 
 public:
@@ -110,7 +104,7 @@ public:
 	}
 
 	~MyString() { // Деструктор
-		DeleteStr();
+		delete[] str;
 	}
 
 
@@ -119,22 +113,13 @@ public:
 		Initialization(symbol);
 		return *this;
 	}
-
 	MyString &operator = (const char *text) { // Оператор повторного присвоєння рядка (str = "new text";)
 		Initialization(text);
 		return *this;
 	}
-
 	MyString &operator = (const MyString &other) { // Оператор копіювання (str = str2;)
-		int tempSize = strlen(other.str);
-		char *tempStr = new char[tempSize + 1];
-		for (int i = 0; i < tempSize; i++) {
-			tempStr[i] = other.str[i];
-		}
-		tempStr[tempSize] = '\0';
-
-		Initialization(tempStr);
-		delete[] tempStr;
+		MyString buffer(other);
+		Initialization(buffer.str);
 		return *this;
 	}
 
@@ -142,34 +127,34 @@ public:
 		Adding(symbol);
 		return *this;
 	}
-
 	MyString &operator += (const char *text) { // Оператор конкатинації з рядком (str += "new text";)
 		Adding(text);
 		return *this;
 	}
-
 	MyString &operator += (const MyString &other) { // Оператор конкатинації змінних (str += str2;)
-		int tempSize = strlen(other.str);
-		char *tempStr = new char[tempSize + 1];
-		for (int i = 0; i < tempSize; i++) {
-			tempStr[i] = other.str[i];
-		}
-		tempStr[tempSize] = '\0';
-
-		Adding(tempStr);
-		delete[] tempStr;
+		MyString buffer(other);
+		Adding(buffer.str);
 		return *this;
 	}
 
-	MyString operator + (const char *text) { // Оператор конкатинації і повернення об'єкту-результату (str = str2 + "text")
-		return ConcatinationOfText(text);
+	MyString operator + (const char symbol) const { // Оператор конкатинації і повернення об'єкту-результату (str = str2 + 'a';)
+		MyString buffer(str);
+		buffer += symbol;
+		return buffer;
+	}
+	MyString operator + (const char *text) const { // Оператор конкатинації і повернення об'єкту-результату (str = str2 + "text";)
+		MyString buffer(str);
+		buffer += text;
+		return buffer;
+	}
+	MyString operator + (const MyString &other) const { // Оператор конкатинації і повернення об'єкту-результату (str = str2 + str3;)
+		MyString buffer(str);
+		buffer += other.str;
+		return buffer;
 	}
 
-	MyString operator + (const MyString &other) { // Оператор конкатинації і повернення об'єкту-результату (str = str2 + str3)
-		return ConcatinationOfText(other.str);
-	}
 
-	char operator [] (const unsigned int index) { // Оператор індексування (Повертає значення, не дозволяє редагувати елементи)
+	char operator [] (const unsigned int index) const { // Оператор індексування (Повертає значення, не дозволяє редагувати елементи)
 		if (index < size)
 			return str[index];
 		return '\0';
@@ -184,12 +169,56 @@ public:
 	}
 
 
+	// Оператори порівняння рядків
+	// В операторах порівняння символів немає необхідності, оскільки при передаванні символа ініціалізується рядок MyString
+	bool operator == (const char *text) const {
+		return StrCmp(this->str, text) == 0;
+	}
+	bool operator == (const MyString &other) const {
+		return StrCmp(this->str, other.str) == 0;
+	}
+
+	bool operator != (const char *text) const {
+		return StrCmp(this->str, text) != 0;
+	}
+	bool operator != (const MyString &other) const {
+		return StrCmp(this->str, other.str) != 0;
+	}
+
+	bool operator > (const char *text) const {
+		return StrCmp(this->str, text) > 0;
+	}
+	bool operator > (const MyString &other) const {
+		return StrCmp(this->str, other.str) > 0;
+	}
+
+	bool operator >= (const char *text) const {
+		return StrCmp(this->str, text) >= 0;
+	}
+	bool operator >= (const MyString &other) const {
+		return StrCmp(this->str, other.str) >= 0;
+	}
+
+	bool operator < (const char *text) const {
+		return StrCmp(this->str, text) < 0;
+	}
+	bool operator < (const MyString &other) const {
+		return StrCmp(this->str, other.str) < 0;
+	}
+
+	bool operator <= (const char *text) const {
+		return StrCmp(this->str, text) <= 0;
+	}
+	bool operator <= (const MyString &other) const {
+		return StrCmp(this->str, other.str) <= 0;
+	}
+
 
 	void clear() { // Очищення рядка
 		Initialization('\0');
 	}
 
-	void getline() { // Читання рядка
+	void getline() { // Читання рядка з консолі
 		clear();
 		char symbol;
 		while (true) {
@@ -200,7 +229,7 @@ public:
 		}
 	}
 
-	unsigned int len() { // Вивід довжини рядка
+	unsigned int len() const { // Вивід довжини рядка
 		return size;
 	}
 
@@ -236,10 +265,8 @@ std::ostream &operator << (std::ostream &out, const MyString &value) { // Вив
 int main() {
 	MyString str;
 
-	//cin >> str;
-	//str.getline();
-
-	cout << str << endl;
+	cin >> str;
+	str.getline();
 
 	return 0;
 }
